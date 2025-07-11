@@ -21,6 +21,7 @@ resource "google_project_service" "artifact_registry" {
 
 resource "google_artifact_registry_repository" "myrepo" {
   provider = google
+  depends_on = [google_project_service.artifact_registry]
 
   project       = var.project_id
   location      = var.region
@@ -33,7 +34,7 @@ resource "google_artifact_registry_repository" "myrepo" {
 # Cloud Runのデプロイ
 resource "google_cloud_run_service" "myapp" {
   name     = "myapp"
-  location = "asia-northeast1"
+  location = var.region
 
   template {
     spec {
@@ -71,7 +72,7 @@ resource "google_cloud_run_service_iam_member" "allow_unauthenticated" {
 resource "google_compute_region_network_endpoint_group" "neg" {
   name                  = "cloudrun-neg"
   network_endpoint_type = "SERVERLESS"
-  region                = "asia-northeast1"
+  region                = var.region
 
   cloud_run {
     service = google_cloud_run_service.myapp.name
@@ -142,7 +143,7 @@ resource "google_compute_security_policy" "allow_specific_ip" {
       }
     }
     action      = "allow"
-    description = "Allow only 126.234.136.211"
+    description = "Allow access from specific IP range."
   }
 
   rule {
